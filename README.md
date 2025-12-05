@@ -41,3 +41,21 @@ Three robots move simultaneously, plan paths around shelves, avoid collisions, a
 │ Collision Logic │
 └─────────────────┘
 ```
+
+### Local Setup
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/soonbee207/warehouse-robot-simulator.git
+cd warehouse-robot-simulator
+```
+
+2. **Install dependencies:**
+```bash
+pip install -r requirements.txt
+```
+
+3. **Run the Streamlit app:**
+```bash
+streamlit run warehouse_sim.py
+```
