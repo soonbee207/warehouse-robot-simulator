@@ -17,7 +17,12 @@ The system includes:
 - Animated Visualization (Matplotlib)  
 - Streamlit Web Interface  
 
-Three robots move simultaneously, plan paths around shelves, avoid collisions, and deliver packages to dropoff zones.
+Four robots move simultaneously, plan paths around shelves, avoid collisions, and deliver packages to dropoff zones.
+
+### Guideline Compliance
+- Robots modulate speed continuously to smooth motion and penalize abrupt acceleration, mirroring the proposal’s safety-focused cost term.
+- Pairwise conflict detection enforces separation by pausing lower-priority robots whenever potential collisions or swaps are predicted.
+- Each robot completes a pickup-and-drop-off cycle, supporting higher throughput and task completion tracking across four concurrent agents.
 
 ---
 

@@ -1,14 +1,15 @@
 # ============================================================
 # FULL WAREHOUSE ROBOT SIMULATION (FIXED)
-# 3 Robots + Collision Avoidance + Velocity Display
-# R3 correctly moves from (0,0) to T4
+# 4 Robots + Collision Avoidance + Velocity Display
+# R3 correctly moves from (0,0) to T4, R4 added
 # ============================================================
 
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from IPython.display import HTML
-import heapq, math
+import heapq
+from itertools import combinations
 
 
 # ============================================================
@@ -177,25 +178,30 @@ def simulate():
 
     tasks=[(3,3),(6,3),(3,6),(6,6)]  # T1 T2 T3 T4
 
-    drop_R1=(0,9)
-    drop_R2=(9,0)
-    drop_R3=(9,9)
+    drop_locations={
+        "R1":(0,9),
+        "R2":(9,0),
+        "R3":(9,9),
+        "R4":(5,9),
+    }
 
-    r1=Robot("R1",(0,5),planner,"dodgerblue")
-    r2=Robot("R2",(5,0),planner,"orange")
-    r3=Robot("R3",(0,0),planner,"green")
+    robot_specs=[
+        ("R1",(0,5),"dodgerblue",tasks[0]),  # T1
+        ("R2",(5,0),"orange",tasks[2]),      # T3
+        ("R3",(0,0),"green",tasks[3]),       # T4
+        ("R4",(9,5),"mediumpurple",tasks[1]) # T2
+    ]
 
-    robots=[r1,r2,r3]
-
-    # CORRECT ASSIGNMENT
-    r1.assign_goal(tasks[0])  # T1
-    r2.assign_goal(tasks[2])  # T3
-    r3.assign_goal(tasks[3])  # T4 ← FIXED
+    robots=[]
+    for name,start,color,initial_task in robot_specs:
+        robot=Robot(name,start,planner,color)
+        robot.assign_goal(initial_task)
+        robots.append(robot)
     
     # DEBUG: Print paths
-    print(f"R1 path length: {len(r1.path)}")
-    print(f"R2 path length: {len(r2.path)}")
-    print(f"R3 path length: {len(r3.path)}, path: {r3.path[:5] if len(r3.path)>0 else 'EMPTY'}")
+    for robot in robots:
+        preview=robot.path[:5] if len(robot.path)>0 else "EMPTY"
+        print(f"{robot.name} path length: {len(robot.path)}, path: {preview}")
 
     fig,ax=plt.subplots(figsize=(6,6))
     ax.set_xlim(-0.5,9.5)
@@ -214,7 +220,7 @@ def simulate():
 
     scat=[ax.plot([],[],'o',color=r.color)[0] for r in robots]
     labels=[ax.text(0,0,"",fontsize=8,color=r.color) for r in robots]
-    box={r1:None,r2:None,r3:None}
+    box={r:None for r in robots}
 
     def update(frame):
 
@@ -223,7 +229,7 @@ def simulate():
             r.wait=False
 
         # Check conflicts across ALL pairs
-        pairs=[(r1,r2),(r1,r3),(r2,r3)]
+        pairs=list(combinations(robots,2))
         for a,b in pairs:
             if predict_conflict(a,b):
                 winner=compute_priority(a,b)
@@ -239,12 +245,7 @@ def simulate():
             if r.goal in tasks:
                 if np.linalg.norm(r.position-np.array(r.goal))<0.2:
                     r.carrying=r.goal
-                    if r.name=="R1":
-                        r.assign_goal(drop_R1)
-                    elif r.name=="R2":
-                        r.assign_goal(drop_R2)
-                    else:
-                        r.assign_goal(drop_R3)
+                    r.assign_goal(drop_locations[r.name])
 
         # Dropoff
         for r in robots:
