@@ -4,11 +4,18 @@
 # R3 correctly moves from (0,0) to T4
 # ============================================================
 
+from pathlib import Path
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from IPython.display import HTML
 import heapq, math
+
+try:
+    from IPython.display import HTML, display
+except ImportError:  # pragma: no cover - optional dependency
+    HTML = None
+    display = None
 
 
 # ============================================================
@@ -97,7 +104,11 @@ class Robot:
     def assign_goal(self,goal):
         self.goal=goal
         if goal:
-            self.path=np.array(self.planner.plan(tuple(self.position.astype(int)),goal),dtype=float)
+            start=np.rint(self.position).astype(int)
+            start[0]=int(np.clip(start[0],0,self.planner.grid.width-1))
+            start[1]=int(np.clip(start[1],0,self.planner.grid.height-1))
+            plan=self.planner.plan(tuple(start),goal)
+            self.path=np.array(plan,dtype=float)
         else:
             self.path=[]
         self.step=0
@@ -140,19 +151,19 @@ class Robot:
 # 4. CONFLICT DETECTION
 # ============================================================
 def predict_conflict(r1,r2):
-    if len(r1.path)==0 or len(r2.path)==0:
-        return False
     c1=tuple(np.floor(r1.position).astype(int))
     c2=tuple(np.floor(r2.position).astype(int))
     if c1==c2:
         return True
+    if np.linalg.norm(r1.position-r2.position)<1.0:
+        return True
+    if len(r1.path)==0 or len(r2.path)==0:
+        return False
     n1=r1.path[min(r1.step+1,len(r1.path)-1)]
     n2=r2.path[min(r2.step+1,len(r2.path)-1)]
     if np.allclose(n1,n2,atol=0.1):
         return True
     if np.allclose(n1,r2.position,atol=0.1) and np.allclose(n2,r1.position,atol=0.1):
-        return True
-    if np.linalg.norm(r1.position-r2.position)<1.0:
         return True
     return False
 
@@ -275,7 +286,13 @@ def simulate():
         return scat + labels
 
     ani=FuncAnimation(fig,update,frames=300,interval=120,blit=True)
-    display(HTML(ani.to_jshtml()))
+    html=ani.to_jshtml()
+    if HTML and display:
+        display(HTML(html))
+    else:
+        output_path=Path("warehouse_sim.html")
+        output_path.write_text(html,encoding="utf-8")
+        print(f"Saved animation to {output_path.resolve()} (open in a browser).")
     plt.close()
 
 simulate()
